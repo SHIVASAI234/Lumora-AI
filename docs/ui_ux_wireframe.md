@@ -167,7 +167,10 @@ Reduced-motion users get static rings and no pulse.
 ### 3.8 Icon styles
 *Standard* uses lucide icons; *Hero* swaps in original comic-style glyphs — Gateway: star shield, Service: gauntlet,
 Database: arc reactor, Queue: web, Cache: storm hammer, AI: visor helmet, External: portal ring. The choice applies to
-the dock, search, inspector, connections, notifications and diagnostics viewer, and is remembered.
+the dock, search, inspector, connections, notifications and diagnostics viewer, and is remembered. In Hero mode every
+node in the scene also wears its emblem: a round DOM badge projected onto the node centre (sized from the node's
+on-screen radius, 22–72 px), ringed and glowing in the node's status colour with the glyph in its type colour. The text
+label lifts above the badge. Emblems stay visible when labels are switched off.
 
 ### 3.9 Node labels
 Constant-size white semibold pill labels (12 px) on a dark backing above each visible node, lightly faded by depth (min 65 %); the hovered/selected label is

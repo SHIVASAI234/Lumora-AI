@@ -1,23 +1,50 @@
 import { useCallback } from 'react'
+import type { CSSProperties } from 'react'
+import type { GraphNode } from '@shared/graph.ts'
+import { NODE_SIZE, STATUS_COLORS, TYPE_COLORS } from '../lib/themes.ts'
 import { labelElements } from '../scene/labels.ts'
 import { useStore, useVisibleIds } from '../store.ts'
+import { HERO_ICONS } from './icons.ts'
 
-function Label({ id, label, active, dimmed }: { id: string; label: string; active: boolean; dimmed: boolean }) {
+interface Props {
+  node: GraphNode
+  active: boolean
+  dimmed: boolean
+  showText: boolean
+  hero: boolean
+}
+
+function Label({ node, active, dimmed, showText, hero }: Props) {
   const ref = useCallback(
     (el: HTMLDivElement | null) => {
-      if (el) labelElements.set(id, el)
-      else labelElements.delete(id)
+      if (el) labelElements.set(node.id, el)
+      else labelElements.delete(node.id)
     },
-    [id],
+    [node.id],
   )
+  const Emblem = HERO_ICONS[node.type]
   return (
     <div
       ref={ref}
-      className="node-label absolute left-0 top-0"
-      data-active={active}
+      className="node-anchor"
+      data-size={NODE_SIZE[node.type]}
+      data-hero={hero}
       style={{ visibility: 'hidden', opacity: active ? 1 : `calc(var(--depth, 1) * ${dimmed ? 0.4 : 1})` }}
     >
-      {label}
+      {hero && (
+        <div
+          className="node-emblem"
+          data-active={active}
+          style={{ '--status': STATUS_COLORS[node.status], color: TYPE_COLORS[node.type] } as CSSProperties}
+        >
+          <Emblem />
+        </div>
+      )}
+      {showText && (
+        <div className="node-label" data-active={active}>
+          {node.label}
+        </div>
+      )}
     </div>
   )
 }
@@ -25,10 +52,11 @@ function Label({ id, label, active, dimmed }: { id: string; label: string; activ
 export function NodeLabels() {
   const graph = useStore((s) => s.graph)
   const showLabels = useStore((s) => s.showLabels)
+  const hero = useStore((s) => s.iconSet) === 'hero'
   const selectedId = useStore((s) => s.selectedId)
   const hoveredId = useStore((s) => s.hoveredId)
   const visible = useVisibleIds()
-  if (!graph || !showLabels) return null
+  if (!graph || (!showLabels && !hero)) return null
 
   const neighbours = new Set<string>()
   if (selectedId) {
@@ -46,10 +74,11 @@ export function NodeLabels() {
         .map((nd) => (
           <Label
             key={nd.id}
-            id={nd.id}
-            label={nd.label}
+            node={nd}
             active={nd.id === selectedId || nd.id === hoveredId}
             dimmed={!!selectedId && !neighbours.has(nd.id)}
+            showText={showLabels}
+            hero={hero}
           />
         ))}
     </div>

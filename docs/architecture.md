@@ -156,7 +156,8 @@ Scene
   positions map; `aVisible` is rewritten only when filters change.
 - **Labels** are plain DOM elements rendered by `<NodeLabels>` outside the canvas and positioned by
   `<LabelProjector>` (`Vector3.project`) each frame. They keep a constant pixel size, fade with depth
-  and avoid one React root per label.
+  and avoid one React root per label. Each element is a zero-size anchor at the node centre; the projector sets
+  `--lift` (label offset) and `--emblem` (Hero-mode badge diameter from the node's on-screen radius).
 - **Raycasting** uses R3F's built-in pointer-event system on the node core meshes
   (`onPointerOver/Out/onClick`), with `onPointerMissed` on the canvas to clear the selection.
 - **Camera** — `OrbitControls` with damping, `minDistance 8`, `maxDistance 140`, polar clamping.

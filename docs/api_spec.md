@@ -172,10 +172,13 @@ Every message in either direction uses one envelope:
 | --- | --- | --- |
 | `hello` | `{ "serverVersion": "1.0.0", "tickMs": 1500 }` | Immediately after connect |
 | `telemetry.tick` | `TelemetryTick` | Every `tickMs` |
-| `node.status_changed` | `{ "id": "payments-db", "from": "active", "to": "critical", "reason": "errorRate 7.2% > 5%" }` | When a tick changes a node's status |
+| `node.status_changed` | `StatusChange`, e.g. `{ "id": "payments-db", "from": "warning", "to": "critical", "reason": "errorRate 7.2% ≥ 5%", "metric": "errorRate", "value": 7.2, "threshold": 5 }` | When a tick changes a node's status |
 | `graph.resynced` | `GraphSnapshot` | After `POST /api/resync` |
 | `insight.generated` | `Insight` | After `POST /api/insights` (lets every screen show the insight) |
 | `pong` | `{}` | Reply to `ping` |
+
+`StatusChange.metric` (`cpu` | `latencyMs` | `errorRate`), `value` and `threshold` name the breached threshold that set
+the new status. They are omitted when a node recovers to `active`; `reason` is always present as a human-readable fallback.
 
 `TelemetryTick` schema:
 

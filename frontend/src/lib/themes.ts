@@ -72,6 +72,16 @@ export const TYPE_LABELS: Record<NodeType, string> = {
   external: 'External',
 }
 
+export const TYPE_COLORS: Record<NodeType, string> = {
+  gateway: '#c084fc',
+  service: '#60a5fa',
+  database: '#e879f9',
+  queue: '#a3e635',
+  cache: '#fde047',
+  ai: '#2dd4bf',
+  external: '#cbd5e1',
+}
+
 export const NODE_SIZE: Record<NodeType, number> = {
   gateway: 1.5,
   service: 1.0,

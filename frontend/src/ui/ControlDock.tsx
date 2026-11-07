@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { NODE_TYPES, STATUSES } from '@shared/graph.ts'
 import { timeAgo } from '../lib/format.ts'
 import { resync } from '../lib/live.ts'
-import { STATUS_COLORS, STATUS_LABELS, THEMES, TYPE_LABELS } from '../lib/themes.ts'
+import { STATUS_COLORS, STATUS_LABELS, THEMES, TYPE_COLORS, TYPE_LABELS } from '../lib/themes.ts'
 import type { ThemeId } from '../lib/themes.ts'
 import { useStore } from '../store.ts'
 import { TYPE_ICONS } from './icons.ts'
@@ -61,7 +61,11 @@ export function ControlDock() {
   useNow(5000)
 
   const counts = { active: 0, warning: 0, critical: 0 }
-  s.graph?.nodes.forEach((nd) => counts[nd.status]++)
+  const typeCounts: Partial<Record<string, number>> = {}
+  s.graph?.nodes.forEach((nd) => {
+    counts[nd.status]++
+    typeCounts[nd.type] = (typeCounts[nd.type] ?? 0) + 1
+  })
 
   if (s.dockCollapsed) {
     return (
@@ -100,7 +104,9 @@ export function ControlDock() {
             const Icon = TYPE_ICONS[t]
             return (
               <Chip key={t} active={s.typeFilter[t]} onClick={() => s.toggleType(t)} label={`Toggle ${TYPE_LABELS[t]} nodes`}>
-                <Icon size={13} /> {TYPE_LABELS[t]}
+                <Icon size={14} style={{ color: s.typeFilter[t] ? TYPE_COLORS[t] : undefined }} />
+                {TYPE_LABELS[t]}
+                <span className="tabular-nums text-slate-400">{typeCounts[t] ?? 0}</span>
               </Chip>
             )
           })}
@@ -113,7 +119,7 @@ export function ControlDock() {
             <Chip key={st} active={s.statusFilter[st]} onClick={() => s.toggleStatus(st)} label={`Toggle ${STATUS_LABELS[st]} nodes`}>
               <span className="h-2 w-2 rounded-full" style={{ background: STATUS_COLORS[st], boxShadow: `0 0 8px ${STATUS_COLORS[st]}` }} />
               {STATUS_LABELS[st]}
-              <span className="tabular-nums text-slate-500">{counts[st]}</span>
+              <span className="tabular-nums text-slate-400">{counts[st]}</span>
             </Chip>
           ))}
         </div>

@@ -1,13 +1,13 @@
-import { BrainCircuit, Database, Globe, Layers, Server, Waypoints, Zap } from 'lucide-react'
+import { Bot, Box, Cloud, Database, HardDrive, ListOrdered, Router } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { NodeType } from '@shared/graph.ts'
 
 export const TYPE_ICONS: Record<NodeType, LucideIcon> = {
-  gateway: Waypoints,
-  service: Server,
+  gateway: Router,
+  service: Box,
   database: Database,
-  queue: Layers,
-  cache: Zap,
-  ai: BrainCircuit,
-  external: Globe,
+  queue: ListOrdered,
+  cache: HardDrive,
+  ai: Bot,
+  external: Cloud,
 }

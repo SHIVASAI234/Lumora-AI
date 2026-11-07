@@ -11,7 +11,7 @@ import { requestInsight } from '../lib/live.ts'
 import { generateLogs } from '../lib/logs.ts'
 import { STATUS_COLORS, STATUS_LABELS, THEMES, TYPE_COLORS, TYPE_LABELS } from '../lib/themes.ts'
 import { useStore } from '../store.ts'
-import { useTypeIcons } from './icons.ts'
+import { useCodename, useNodeIcon } from './icons.ts'
 import { RiskGauge } from './RiskMeter.tsx'
 import { Sparkline } from './Sparkline.tsx'
 import { useNodeRisk } from './useNodeRisk.ts'
@@ -76,7 +76,7 @@ function MetricCard({ node, metric }: { node: GraphNode; metric: (typeof METRICS
 function ConnectionList({ node }: { node: GraphNode }) {
   const graph = useStore((s) => s.graph)
   const select = useStore((s) => s.select)
-  const Icons = useTypeIcons()
+  const iconFor = useNodeIcon()
   if (!graph) return null
   const byId = new Map(graph.nodes.map((nd) => [nd.id, nd]))
   const inbound = graph.edges.filter((e) => e.target === node.id)
@@ -95,7 +95,7 @@ function ConnectionList({ node }: { node: GraphNode }) {
       </div>
       <ul className="space-y-1">
         {rows.map(({ edge, other, dir }) => {
-          const Icon = Icons[other.type]
+          const Icon = iconFor(other)
           return (
             <li key={edge.id}>
               <button
@@ -293,7 +293,8 @@ export function InspectorDrawer() {
   const node = current ?? last
   const open = !!current
   const scroller = useRef<HTMLDivElement>(null)
-  const Icons = useTypeIcons()
+  const iconFor = useNodeIcon()
+  const codename = useCodename(current ?? last)
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: 0 })
@@ -316,12 +317,13 @@ export function InspectorDrawer() {
             <div className="relative flex items-start gap-3">
               <div className="rounded-xl border border-white/10 bg-white/5 p-2.5" style={{ color: STATUS_COLORS[node.status] }}>
                 {(() => {
-                  const Icon = Icons[node.type]
+                  const Icon = iconFor(node)
                   return <Icon size={20} />
                 })()}
               </div>
               <div className="min-w-0 flex-1">
                 <h2 className="truncate text-lg font-semibold">{node.label}</h2>
+                {codename && <p className="truncate text-xs font-semibold tracking-wide text-fuchsia-300">{codename}</p>}
                 <p className="truncate text-xs text-slate-400">
                   {TYPE_LABELS[node.type]} · {node.cluster} · {node.version} · {node.region}
                 </p>

@@ -15,7 +15,7 @@ function Label({ id, label, active, dimmed }: { id: string; label: string; activ
       ref={ref}
       className="node-label absolute left-0 top-0"
       data-active={active}
-      style={{ visibility: 'hidden', opacity: active ? 1 : `calc(var(--depth, 1) * ${dimmed ? 0.3 : 1})` }}
+      style={{ visibility: 'hidden', opacity: active ? 1 : `calc(var(--depth, 1) * ${dimmed ? 0.4 : 1})` }}
     >
       {label}
     </div>

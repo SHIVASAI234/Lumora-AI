@@ -69,7 +69,7 @@ Sections separated by hairline dividers, each with an uppercase micro-label:
 
 | Section | Controls |
 | --- | --- |
-| **Node types** | Toggle chips with lucide icons: Gateway, Service, Database, Queue, Cache, AI, External. Inactive chips dim; node meshes of that type are hidden (and their edges). |
+| **Node types** | Toggle chips with type-tinted lucide icons and live counts: Gateway (Router), Service (Box), Database, Queue (ListOrdered), Cache (HardDrive), AI (Bot), External (Cloud). Inactive chips dim; node meshes of that type are hidden (and their edges). |
 | **Status** | Three toggle chips (Active / Warning / Critical) with colour dots and live counts. |
 | **Physics** | Switch "Particle physics" (force layout on/off). Slider "Gravity" 0–100 (cluster cohesion). Button "Scatter" (randomise positions & let physics settle). |
 | **View** | Switches: "Labels", "Auto-rotate", "Flow particles". Theme segmented control (Nebula / Aurora / Solar). |
@@ -124,13 +124,15 @@ Status colour dots, and a hint row: "Drag to orbit · Scroll to zoom · Click a 
 ### 3.5 Hover tooltip
 Small glass chip following the cursor when hovering a node: label, type, status dot, p95 latency.
 
-### 3.6 Event feed
-Top-centre stack (below the top bar) of up to 3 glass toasts for `node.status_changed` events, e.g.
-`● Payments DB  warning → critical · errorRate 5.1% ≥ 5%`. Each toast lives 8 s; clicking it selects the
-node.
+### 3.6 Alert cards
+Top-centre stack (below the top bar, max 380 px wide) of up to 3 glass cards for `node.status_changed` events. Each
+card shows the node's tinted type icon, label, type · cluster, time since the change, `from → to` status badges and the
+breached metric (e.g. `Error rate 2.6% (warning ≥ 2%)`, or `Recovered` for → active). Cards live 10 s. Clicking a
+card re-enables any filter hiding the node, flies the camera to it, opens the inspector and pulses the metric card that
+triggered the alert (labelled **Alert trigger**) for ~5 s.
 
 ### 3.7 Node labels
-Constant-size pill labels (11 px) above each visible node, faded by depth; the hovered/selected label is
+Constant-size white semibold pill labels (12 px) on a dark backing above each visible node, lightly faded by depth (min 65 %); the hovered/selected label is
 brightened and non-neighbour labels fade when a node is selected. Toggle with the dock switch or `L`.
 
 ## 4. Scene interaction states

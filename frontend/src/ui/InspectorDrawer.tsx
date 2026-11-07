@@ -1,11 +1,12 @@
 import { Activity, ArrowLeft, ArrowRight, Cpu, Gauge, LoaderCircle, MemoryStick, RefreshCw, Sparkles, Timer, TriangleAlert, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import type { GraphNode, Insight } from '@shared/graph.ts'
 import { fmtMs, fmtNum, fmtPct, metricStatus } from '../lib/format.ts'
 import type { MetricKey } from '../lib/format.ts'
 import { requestInsight } from '../lib/live.ts'
-import { STATUS_COLORS, STATUS_LABELS, THEMES, TYPE_LABELS } from '../lib/themes.ts'
+import { STATUS_COLORS, STATUS_LABELS, THEMES, TYPE_COLORS, TYPE_LABELS } from '../lib/themes.ts'
 import { useStore } from '../store.ts'
 import { TYPE_ICONS } from './icons.ts'
 import { Sparkline } from './Sparkline.tsx'
@@ -21,18 +22,43 @@ const METRICS: { key: MetricKey; label: string; icon: LucideIcon; fmt: (v: numbe
 
 function MetricCard({ node, metric }: { node: GraphNode; metric: (typeof METRICS)[number] }) {
   const history = useStore((s) => s.history[node.id]) ?? []
+  const highlight = useStore((s) => s.highlight)
+  const clearHighlight = useStore((s) => s.clearHighlight)
+  const ref = useRef<HTMLDivElement>(null)
   const value = node.metrics[metric.key]
   const status = metricStatus(metric.key, value)
   const color = metric.key === 'rps' ? '#a5b4fc' : STATUS_COLORS[status]
   const Icon = metric.icon
   const disabled = node.type === 'external' && (metric.key === 'cpu' || metric.key === 'memory')
+  const flash = highlight?.id === node.id && highlight.metric === metric.key ? highlight.nonce : null
+
+  useEffect(() => {
+    if (flash === null) return
+    const scroll = setTimeout(() => ref.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 350)
+    const clear = setTimeout(clearHighlight, 5000)
+    return () => {
+      clearTimeout(scroll)
+      clearTimeout(clear)
+    }
+  }, [flash, clearHighlight])
+
   return (
-    <div className={`rounded-xl border border-white/5 bg-white/[.03] p-3 ${metric.wide ? 'col-span-2' : ''}`}>
+    <div
+      ref={ref}
+      className={`rounded-xl border border-white/5 bg-white/[.03] p-3 ${metric.wide ? 'col-span-2' : ''} ${flash !== null ? 'metric-flash' : ''}`}
+      style={flash !== null ? ({ '--flash': color } as CSSProperties) : undefined}
+    >
       <div className="flex items-center justify-between text-[11px] text-slate-400">
         <span className="flex items-center gap-1.5">
           <Icon size={12} /> {metric.label}
         </span>
-        {status !== 'active' && <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />}
+        {flash !== null ? (
+          <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color }}>
+            Alert trigger
+          </span>
+        ) : (
+          status !== 'active' && <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
+        )}
       </div>
       <div className="mt-1 text-lg font-semibold tabular-nums" style={{ color: disabled ? undefined : status === 'active' ? '#e6e9ff' : color }}>
         {disabled ? <span className="text-sm text-slate-500">n/a (SaaS)</span> : metric.fmt(value)}
@@ -71,7 +97,7 @@ function ConnectionList({ node }: { node: GraphNode }) {
                 className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-white/5"
               >
                 {dir === 'in' ? <ArrowLeft size={13} className="text-slate-500" /> : <ArrowRight size={13} className="text-slate-500" />}
-                <Icon size={13} className="text-slate-400" />
+                <Icon size={13} style={{ color: TYPE_COLORS[other.type] }} />
                 <span className="flex-1 truncate">{other.label}</span>
                 <span className="rounded bg-white/5 px-1.5 py-0.5 font-mono text-[10px] text-slate-400">{edge.kind}</span>
                 <span className="w-14 text-right text-xs tabular-nums text-slate-400">{fmtNum(edge.throughput)}/s</span>

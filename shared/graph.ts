@@ -75,11 +75,17 @@ export interface TelemetryTick {
   edges: EdgeTelemetry[]
 }
 
+export type TriggerMetric = 'cpu' | 'latencyMs' | 'errorRate'
+
 export interface StatusChange {
   id: string
   from: Status
   to: Status
   reason: string
+  /** Metric whose threshold set the new status; omitted when recovering to `active`. */
+  metric?: TriggerMetric
+  value?: number
+  threshold?: number
 }
 
 export interface Insight {
@@ -341,13 +347,34 @@ export function worstStatus(a: Status, b: Status): Status {
   return STATUS_RANK[a] >= STATUS_RANK[b] ? a : b
 }
 
-export function deriveStatus(m: NodeMetrics): { status: Status; reason: string } {
-  if (m.errorRate >= 5) return { status: 'critical', reason: `errorRate ${m.errorRate.toFixed(1)}% ≥ 5%` }
-  if (m.cpu >= 92) return { status: 'critical', reason: `cpu ${m.cpu.toFixed(0)}% ≥ 92%` }
-  if (m.latencyMs >= 600) return { status: 'critical', reason: `p95 ${m.latencyMs.toFixed(0)}ms ≥ 600ms` }
-  if (m.errorRate >= 2) return { status: 'warning', reason: `errorRate ${m.errorRate.toFixed(1)}% ≥ 2%` }
-  if (m.cpu >= 78) return { status: 'warning', reason: `cpu ${m.cpu.toFixed(0)}% ≥ 78%` }
-  if (m.latencyMs >= 300) return { status: 'warning', reason: `p95 ${m.latencyMs.toFixed(0)}ms ≥ 300ms` }
+export interface StatusVerdict {
+  status: Status
+  reason: string
+  metric?: TriggerMetric
+  value?: number
+  threshold?: number
+}
+
+const STATUS_RULES: { status: Exclude<Status, 'active'>; metric: TriggerMetric; threshold: number }[] = [
+  { status: 'critical', metric: 'errorRate', threshold: 5 },
+  { status: 'critical', metric: 'cpu', threshold: 92 },
+  { status: 'critical', metric: 'latencyMs', threshold: 600 },
+  { status: 'warning', metric: 'errorRate', threshold: 2 },
+  { status: 'warning', metric: 'cpu', threshold: 78 },
+  { status: 'warning', metric: 'latencyMs', threshold: 300 },
+]
+
+const describeMetric = (metric: TriggerMetric, v: number) =>
+  metric === 'errorRate' ? `errorRate ${v.toFixed(1)}%` : metric === 'cpu' ? `cpu ${v.toFixed(0)}%` : `p95 ${v.toFixed(0)}ms`
+
+export function deriveStatus(m: NodeMetrics): StatusVerdict {
+  for (const r of STATUS_RULES) {
+    const value = m[r.metric]
+    if (value >= r.threshold) {
+      const unit = r.metric === 'latencyMs' ? 'ms' : '%'
+      return { status: r.status, reason: `${describeMetric(r.metric, value)} ≥ ${r.threshold}${unit}`, metric: r.metric, value, threshold: r.threshold }
+    }
+  }
   return { status: 'active', reason: 'all metrics within thresholds' }
 }
 
@@ -489,8 +516,10 @@ export function createSimulator(seed: number = DEFAULT_SEED): Simulator {
         state.stress.set(node.id, stress)
         state.drift.set(node.id, drift)
         const metrics = metricsFor(node.type, stress, rng, state.scale.get(node.id)!)
-        const { status, reason } = deriveStatus(metrics)
-        if (status !== node.status) changes.push({ id: node.id, from: node.status, to: status, reason })
+        const { status, reason, metric, value, threshold } = deriveStatus(metrics)
+        if (status !== node.status) {
+          changes.push({ id: node.id, from: node.status, to: status, reason, ...(metric ? { metric, value, threshold } : {}) })
+        }
         return { ...node, metrics, status }
       })
       const byId = new Map(nodes.map((nd) => [nd.id, nd]))

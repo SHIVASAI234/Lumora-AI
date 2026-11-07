@@ -22,7 +22,7 @@ export function LabelProjector() {
       const y = (-_v.y * 0.5 + 0.5) * size.height - offset - 10
       el.style.visibility = 'visible'
       el.style.transform = `translate(-50%, -100%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`
-      el.style.setProperty('--depth', Math.max(0.35, Math.min(1, 1.5 - dist / 110)).toFixed(2))
+      el.style.setProperty('--depth', Math.max(0.65, Math.min(1, 1.6 - dist / 150)).toFixed(2))
     }
   })
   return null

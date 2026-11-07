@@ -26,6 +26,7 @@ interface LumoraState {
 
   selectedId: string | null
   hoveredId: string | null
+  highlight: { id: string; metric: keyof NodeMetrics; nonce: number } | null
 
   typeFilter: Record<NodeType, boolean>
   statusFilter: Record<Status, boolean>
@@ -48,6 +49,8 @@ interface LumoraState {
   setConnection: (c: Connection) => void
   setSyncing: (v: boolean) => void
   select: (id: string | null) => void
+  inspectEvent: (e: FeedEvent) => void
+  clearHighlight: () => void
   hover: (id: string | null) => void
   toggleType: (t: NodeType) => void
   toggleStatus: (s: Status) => void
@@ -86,6 +89,7 @@ export const useStore = create<LumoraState>()((set, get) => ({
 
   selectedId: null,
   hoveredId: null,
+  highlight: null,
 
   typeFilter: allTrue(NODE_TYPES),
   statusFilter: allTrue(STATUSES),
@@ -127,7 +131,19 @@ export const useStore = create<LumoraState>()((set, get) => ({
   },
   setConnection: (connection) => set({ connection }),
   setSyncing: (syncing) => set({ syncing }),
-  select: (selectedId) => set({ selectedId }),
+  select: (selectedId) => set({ selectedId, highlight: null }),
+  inspectEvent: (e) => {
+    const { graph, typeFilter, statusFilter, highlight } = get()
+    const node = graph?.nodes.find((nd) => nd.id === e.id)
+    if (!node) return
+    set({
+      selectedId: node.id,
+      typeFilter: { ...typeFilter, [node.type]: true },
+      statusFilter: { ...statusFilter, [node.status]: true },
+      highlight: e.metric ? { id: node.id, metric: e.metric, nonce: (highlight?.nonce ?? 0) + 1 } : null,
+    })
+  },
+  clearHighlight: () => set({ highlight: null }),
   hover: (hoveredId) => set({ hoveredId }),
   toggleType: (t) => set({ typeFilter: { ...get().typeFilter, [t]: !get().typeFilter[t] } }),
   toggleStatus: (s) => set({ statusFilter: { ...get().statusFilter, [s]: !get().statusFilter[s] } }),

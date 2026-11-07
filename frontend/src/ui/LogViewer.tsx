@@ -1,6 +1,6 @@
 import { BookOpen, Circle, CircleCheck, ExternalLink, ScrollText, Waypoints, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { createElement, useEffect, useMemo, useState } from 'react'
 import { fmtMs } from '../lib/format.ts'
 import { externalLink } from '../lib/links.ts'
 import { generateLogs, generateRunbook, generateTraces } from '../lib/logs.ts'
@@ -8,7 +8,7 @@ import type { LogLevel } from '../lib/logs.ts'
 import { STATUS_COLORS, TYPE_LABELS } from '../lib/themes.ts'
 import { useStore } from '../store.ts'
 import type { LogTab } from '../store.ts'
-import { useTypeIcons } from './icons.ts'
+import { useCodename, useNodeIcon } from './icons.ts'
 import { RiskBadge } from './RiskMeter.tsx'
 import { useNodeRisk } from './useNodeRisk.ts'
 
@@ -31,7 +31,8 @@ export function LogViewer() {
   const history = useStore((s) => (s.logs ? s.history[s.logs.id] : undefined))
   const graph = useStore((s) => s.graph)
   const lastTickAt = useStore((s) => s.lastTickAt)
-  const Icons = useTypeIcons()
+  const iconFor = useNodeIcon()
+  const codename = useCodename(node)
   const risk = useNodeRisk(node)
   const [level, setLevel] = useState<'all' | LogLevel>('all')
   const [done, setDone] = useState<Record<string, boolean>>({})
@@ -53,7 +54,7 @@ export function LogViewer() {
   const runbook = useMemo(() => (node && risk ? generateRunbook(node, graph, risk.metric) : null), [node, graph, risk])
 
   if (!logs || !node) return null
-  const Icon = Icons[node.type]
+  const Icon = iconFor(node)
   const href = externalLink(logs.tab, node)
   const filtered = level === 'all' ? lines : lines.filter((l) => l.level === level)
 
@@ -67,10 +68,11 @@ export function LogViewer() {
       <div role="dialog" aria-modal="true" aria-label={`${node.label} diagnostics`} className="glass toast-in flex h-[min(620px,85vh)] w-[min(840px,100%)] flex-col overflow-hidden rounded-2xl">
         <div className="flex items-start gap-3 px-5 pb-3 pt-4">
           <div className="rounded-xl border border-white/10 bg-white/5 p-2" style={{ color: STATUS_COLORS[node.status] }}>
-            <Icon size={18} />
+            {createElement(Icon, { size: 18 })}
           </div>
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-base font-semibold">{node.label}</h2>
+            {codename && <p className="truncate text-xs font-semibold text-fuchsia-300">{codename}</p>}
             <p className="truncate text-xs text-slate-400">
               {TYPE_LABELS[node.type]} · {node.owner} · {node.version} · {node.region}
             </p>

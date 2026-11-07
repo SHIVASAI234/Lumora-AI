@@ -4,7 +4,8 @@ import type { GraphNode } from '@shared/graph.ts'
 import { NODE_SIZE, STATUS_COLORS, TYPE_COLORS } from '../lib/themes.ts'
 import { labelElements } from '../scene/labels.ts'
 import { useStore, useVisibleIds } from '../store.ts'
-import { HERO_ICONS } from './icons.ts'
+import { heroFor } from '../lib/heroes.ts'
+import { HERO_GLYPHS } from './icons.ts'
 
 interface Props {
   node: GraphNode
@@ -22,7 +23,7 @@ function Label({ node, active, dimmed, showText, hero }: Props) {
     },
     [node.id],
   )
-  const Emblem = HERO_ICONS[node.type]
+  const Emblem = HERO_GLYPHS[heroFor(node).glyph]
   return (
     <div
       ref={ref}

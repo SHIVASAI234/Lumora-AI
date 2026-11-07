@@ -172,6 +172,14 @@ node in the scene also wears its emblem: a round DOM badge projected onto the no
 on-screen radius, 22–72 px), ringed and glowing in the node's status colour with the glyph in its type colour. The text
 label lifts above the badge. Emblems stay visible when labels are switched off.
 
+In Hero mode each node also has its own identity from the roster in `frontend/src/lib/heroes.ts`: one of 24 original
+emblems (star shield, gauntlet, arc reactor, web, storm hammer, visor helmet, portal ring, armored helmet, claws,
+arrow, mystic sigil, panther mask, gamma fist, cosmic gem, bolt, wings, trident, rocket, target, flame, cosmic eye,
+atom, crown, domino mask) and a codename (e.g. Payments DB → shield, "Vault Guardian"). Connected nodes never share an
+emblem. The real service name always stays primary — scene labels show only the name; the codename appears underneath
+it in the hover tooltip, inspector header, notification cards and diagnostics viewer. Standard mode shows no emblems
+and no codenames.
+
 ### 3.9 Node labels
 Constant-size white semibold pill labels (12 px) on a dark backing above each visible node, lightly faded by depth (min 65 %); the hovered/selected label is
 brightened and non-neighbour labels fade when a node is selected. Toggle with the dock switch or `L`.

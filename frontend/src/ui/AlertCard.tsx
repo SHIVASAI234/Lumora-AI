@@ -1,9 +1,10 @@
 import { Activity, ArrowRight, ChevronRight, ScrollText } from 'lucide-react'
+import { createElement } from 'react'
 import type { GraphNode, Status, TriggerMetric } from '@shared/graph.ts'
 import { fmtMs, fmtPct, timeAgo } from '../lib/format.ts'
 import { STATUS_COLORS, STATUS_LABELS, TYPE_LABELS } from '../lib/themes.ts'
 import type { FeedEvent } from '../store.ts'
-import { useTypeIcons } from './icons.ts'
+import { useCodename, useNodeIcon } from './icons.ts'
 import { RiskBadge } from './RiskMeter.tsx'
 
 const METRIC_LABELS: Record<TriggerMetric, string> = {
@@ -41,8 +42,9 @@ interface Props {
 }
 
 export function AlertCard({ event: e, node, cluster, unread, onInspect, onLogs }: Props) {
-  const Icons = useTypeIcons()
-  const Icon = node ? Icons[node.type] : Activity
+  const iconFor = useNodeIcon()
+  const codename = useCodename(node)
+  const Icon = node ? iconFor(node) : Activity
   const color = STATUS_COLORS[e.to]
   const label = node?.label ?? e.id
 
@@ -51,7 +53,7 @@ export function AlertCard({ event: e, node, cluster, unread, onInspect, onLogs }
       <button onClick={onInspect} aria-label={`Inspect ${label}: ${e.from} to ${e.to}`} className="w-full px-3 pb-1.5 pt-2.5 text-left">
         <div className="flex items-center gap-2.5">
           <span className="rounded-lg p-1.5" style={{ color, background: `${color}1f`, boxShadow: `0 0 12px ${color}33` }}>
-            <Icon size={15} />
+            {createElement(Icon, { size: 15 })}
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -62,6 +64,7 @@ export function AlertCard({ event: e, node, cluster, unread, onInspect, onLogs }
             {node && (
               <div className="truncate text-[11px] text-slate-400">
                 {TYPE_LABELS[node.type]} · {cluster ?? node.cluster}
+                {codename && <span className="text-fuchsia-300"> · {codename}</span>}
               </div>
             )}
           </div>

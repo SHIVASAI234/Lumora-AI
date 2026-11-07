@@ -30,7 +30,7 @@ the centre of the scene.
 - **Canvas**: `position: fixed; inset: 0`, behind everything (`z-0`). Overlays are `pointer-events-none`
   containers with `pointer-events-auto` panels so empty overlay space still orbits the camera.
 - **Breakpoints**: `< 1024 px` → dock collapses to icon rail by default; `< 640 px` → inspector becomes a
-  bottom sheet (70 vh) and the dock becomes a bottom toolbar.
+  bottom sheet (70 vh); stats chips and legend are hidden.
 
 ## 2. Visual language
 
@@ -123,6 +123,15 @@ Status colour dots, and a hint row: "Drag to orbit · Scroll to zoom · Click a 
 
 ### 3.5 Hover tooltip
 Small glass chip following the cursor when hovering a node: label, type, status dot, p95 latency.
+
+### 3.6 Event feed
+Top-centre stack (below the top bar) of up to 3 glass toasts for `node.status_changed` events, e.g.
+`● Payments DB  warning → critical · errorRate 5.1% ≥ 5%`. Each toast lives 8 s; clicking it selects the
+node.
+
+### 3.7 Node labels
+Constant-size pill labels (11 px) above each visible node, faded by depth; the hovered/selected label is
+brightened and non-neighbour labels fade when a node is selected. Toggle with the dock switch or `L`.
 
 ## 4. Scene interaction states
 

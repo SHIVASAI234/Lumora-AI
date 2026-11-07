@@ -84,8 +84,9 @@ flowchart LR
 | --- | --- | --- |
 | Graph snapshot, telemetry, history | Zustand store | Shared by scene + UI, low frequency (≈1 Hz) |
 | Selection, hover, filters, settings | Zustand store | Drives both scene highlighting and UI |
-| Node positions / velocities | `useRef` in `<Constellation>` (`Map<id, Vector3>`) | Updated 60×/s by the physics loop — kept out of React state to avoid re-renders |
+| Node positions / velocities | `scene/layout.ts` module (`Map<id, Body>`) | Updated 60×/s by the physics loop — kept out of React state to avoid re-renders |
 | Camera animation target | `<CameraRig>` local ref | Purely presentational |
+| Label DOM elements | `scene/labels.ts` registry | Written by `<LabelProjector>` every frame |
 
 ## 3. Component hierarchy
 
@@ -97,17 +98,19 @@ flowchart TD
     App --> InspectorDrawer
     App --> Legend
     App --> HoverTooltip
+    App --> EventFeed
+    App --> NodeLabels["NodeLabels (DOM label layer)"]
 
     Scene["Scene (R3F &lt;Canvas&gt;)"] --> Backdrop["Backdrop (Stars, fog, lights)"]
     Scene --> Constellation
     Scene --> CameraRig["CameraRig (OrbitControls + fly-to)"]
+    Scene --> LabelProjector["LabelProjector (projects label DOM nodes each frame)"]
     Scene --> Effects["Effects (Bloom, Vignette)"]
 
     Constellation --> ForceLayout["useForceLayout (physics hook)"]
     Constellation --> NodeMesh["NodeMesh × N"]
     Constellation --> Edges["Edges (pulsing LineSegments shader)"]
     Constellation --> FlowParticles["FlowParticles (Points)"]
-    NodeMesh --> NodeLabel["Html label"]
 
     ControlDock --> FilterGroup["Type / status filters"]
     ControlDock --> PhysicsControls["Physics + gravity"]
@@ -131,8 +134,7 @@ Scene
 │   │   └── Group node:<id>  × N        (position written by physics each frame)
 │   │       ├── Mesh core               SphereGeometry, MeshStandardMaterial emissive=statusColor, toneMapped=false (→ bloom)
 │   │       ├── Mesh halo               SphereGeometry (larger), additive MeshBasicMaterial, pulsing scale
-│   │       ├── Mesh ring               RingGeometry, shown on hover/selection, billboarded
-│   │       └── Html label              DOM overlay (drei <Html>), distance-scaled
+│   │       └── Mesh ring               RingGeometry, shown on hover/selection, billboarded
 │   ├── LineSegments "edges"            BufferGeometry: position, aProgress (0→1 along edge), aColor, aVisible
 │   │                                   ShaderMaterial: travelling pulse = fract(aProgress - uTime*speed), additive blending
 │   └── Points "flow"                   K particles per edge, positions lerped source→target each frame
@@ -148,6 +150,9 @@ Scene
   the `Bloom` pass. Status changes lerp the emissive colour so transitions look smooth.
 - **Edges** are a single `LineSegments` draw call. Positions are rewritten every frame from the physics
   positions map; `aVisible` is rewritten only when filters change.
+- **Labels** are plain DOM elements rendered by `<NodeLabels>` outside the canvas and positioned by
+  `<LabelProjector>` (`Vector3.project`) each frame. They keep a constant pixel size, fade with depth
+  and avoid one React root per label.
 - **Raycasting** uses R3F's built-in pointer-event system on the node core meshes
   (`onPointerOver/Out/onClick`), with `onPointerMissed` on the canvas to clear the selection.
 - **Camera** — `OrbitControls` with damping, `minDistance 8`, `maxDistance 140`, polar clamping.

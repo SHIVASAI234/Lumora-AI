@@ -8,7 +8,7 @@ the centre of the scene.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────────┐
-│ ◆ LUMORA AI   Data Constellation     ● LIVE  48 nodes · 73 links · 3 critical   [⌘K ⌕]  │  ← Top bar (glass, 56px)
+│ ◆ LUMORA AI   Data Constellation   ● LIVE  48 nodes · 73 links · 3 critical  🔔3  [⌘K ⌕]  │  ← Top bar (glass, 56px)
 ├────────────┬─────────────────────────────────────────────────────────────┬───────────────┤
 │ CONTROL    │                                                             │  INSPECTOR    │
 │ DOCK       │                    ·  ✦        ·                            │  DRAWER       │
@@ -23,7 +23,7 @@ the centre of the scene.
 │ Physics    │                                                             │  Connections  │
 │ View/Theme │                                                             │  AI Insight   │
 │ [Re-sync]  │   ┌─────────────────────────────┐                           │               │
-│            │   │ ● Active ● Warning ● Critical│  ← Legend (bottom-left)   │               │
+│            │   │ ● Active ● Warning ● Critical [🔇 Muted]│  ← Legend + alarm toggle │               │
 └────────────┴───┴─────────────────────────────┴───────────────────────────┴───────────────┘
 ```
 
@@ -62,6 +62,8 @@ the centre of the scene.
 - Centre/right: connection pill — `● LIVE` (mint, pulsing) when the WebSocket is open, `◐ SIMULATED`
   (amber) in offline mode; stats chips (nodes, links, warning count, critical count — critical chip
   pulses red when > 0).
+- **Notifications bell** (right of the stats): unread badge (red if any unread alert is critical, amber otherwise; the
+  bell icon rings while a critical alert is unread). Opens a 400 px glass dropdown — see §3.6.
 - Search box: type-ahead over node labels/ids; `Enter` selects and flies to the first match. `/` focuses it.
 
 ### 3.2 Control dock (left, 288 px, collapsible)
@@ -72,7 +74,7 @@ Sections separated by hairline dividers, each with an uppercase micro-label:
 | **Node types** | Toggle chips with type-tinted lucide icons and live counts: Gateway (Router), Service (Box), Database, Queue (ListOrdered), Cache (HardDrive), AI (Bot), External (Cloud). Inactive chips dim; node meshes of that type are hidden (and their edges). |
 | **Status** | Three toggle chips (Active / Warning / Critical) with colour dots and live counts. |
 | **Physics** | Switch "Particle physics" (force layout on/off). Slider "Gravity" 0–100 (cluster cohesion). Button "Scatter" (randomise positions & let physics settle). |
-| **View** | Switches: "Labels", "Auto-rotate", "Flow particles". Theme segmented control (Nebula / Aurora / Solar). |
+| **View** | Switches: "Labels", "Auto-rotate", "Flow particles", "Threat FX". Theme segmented control (Nebula / Aurora / Solar). Icon style segmented control (Standard / Hero). |
 | **Data** | Primary button "Re-sync data" (spinner while in flight) + timestamp of last sync. |
 
 Collapsed state: 64 px icon rail; hovering an icon shows a tooltip.
@@ -87,7 +89,14 @@ space.
 │ [icon] Payments DB            ✕       │
 │ database · payments · v14.2 · eu-w-1  │
 │ ● CRITICAL                            │
+│ ╭─╮ RISK  Severe                      │
+│ 86  Error rate at 144% of limit,      │
+│     rising · 6 dependents             │
 │ "Primary ledger store…" description   │
+├───────────────────────────────────────┤
+│ SOURCE & LOGS                         │
+│ [Logs  4 errors] [Traces]             │
+│ [Source code ↗]  [Runbook]            │
 ├───────────────────────────────────────┤
 │ LIVE METRICS                          │
 │ ┌──────────┐ ┌──────────┐             │
@@ -114,24 +123,53 @@ space.
 └───────────────────────────────────────┘
 ```
 
+**Risk meter**: 0–100 gauge under the status pill. Score = threshold proximity (≤ 75, warning threshold ≈ 45,
+critical ≈ 75) + 10 if the top metric is rising over the last ~15 s + up to 15 for dependents (scaled by pressure).
+Levels: Low < 35 ≤ Elevated < 55 ≤ High < 75 ≤ Severe. The reason line names the metric closest to its limit.
+
+**Source & logs**: Logs / Traces / Runbook open the in-app diagnostics viewer (below). Each button — and Source
+code — becomes an external link when the matching `VITE_LOGS_URL` / `VITE_TRACES_URL` / `VITE_SOURCE_URL` /
+`VITE_RUNBOOK_URL` template is set (placeholders `{id}`, `{label}`, `{cluster}`, `{owner}`, `{region}`, `{version}`).
+Source code is disabled until `VITE_SOURCE_URL` is configured.
+
+**Diagnostics viewer**: centred modal (840 × 620 max) with tabs —
+*Logs* (simulated live tail derived from the node's metric history, newest first, level filters, ERROR rows tinted),
+*Traces* (one trace per recent tick: root span + downstream-call spans as a waterfall, slow/error spans coloured),
+*Runbook* (checklist generated from the riskiest metric and node type, on-call handle, escalation rule).
+`Esc` or clicking the backdrop closes it.
+
 States: *empty* (prompt "Run AI diagnostics"), *loading* (shimmer skeleton + "Analysing telemetry…"),
 *result*, *error* (retry). A new insight for the selected node arriving via `insight.generated` replaces
 the current one.
 
 ### 3.4 Legend (bottom-left of canvas)
-Status colour dots, and a hint row: "Drag to orbit · Scroll to zoom · Click a star to inspect".
+Status colour dots, an alarm toggle (`Muted` by default → `Alarm on`; remembered in localStorage), and a hint row:
+"Drag to orbit · Scroll to zoom · Click a star to inspect". With the alarm on, a short Web Audio two-tone plays when a
+node turns critical (at most once every 4 s).
 
 ### 3.5 Hover tooltip
 Small glass chip following the cursor when hovering a node: label, type, status dot, p95 latency.
 
-### 3.6 Alert cards
-Top-centre stack (below the top bar, max 380 px wide) of up to 3 glass cards for `node.status_changed` events. Each
+### 3.6 Notifications (alert cards)
+Alerts never pop over the scene. The last 50 `node.status_changed` events live in the bell dropdown, newest first,
+with filter tabs (All / Critical / Warning / Recovered, each with a count) and **Mark all read**. Each
 card shows the node's tinted type icon, label, type · cluster, time since the change, `from → to` status badges and the
-breached metric (e.g. `Error rate 2.6% (warning ≥ 2%)`, or `Recovered` for → active). Cards live 10 s. Clicking a
-card re-enables any filter hiding the node, flies the camera to it, opens the inspector and pulses the metric card that
+breached metric (e.g. `Error rate 2.6% (warning ≥ 2%)`, or `Recovered` for → active), the node's current risk badge,
+a **Logs** action (opens the diagnostics viewer) and a **View ‹metric›** action. Clicking a
+card closes the dropdown, re-enables any filter hiding the node, flies the camera to it, opens the inspector and pulses the metric card that
 triggered the alert (labelled **Alert trigger**) for ~5 s.
 
-### 3.7 Node labels
+### 3.7 Threat mode
+When "Threat FX" is on (default) and any node is critical: each critical node emits expanding red shockwave rings, and
+the screen edges glow red (inset vignette whose size grows with the number of critical nodes, pulsing every 2.4 s).
+Reduced-motion users get static rings and no pulse.
+
+### 3.8 Icon styles
+*Standard* uses lucide icons; *Hero* swaps in original comic-style glyphs — Gateway: star shield, Service: gauntlet,
+Database: arc reactor, Queue: web, Cache: storm hammer, AI: visor helmet, External: portal ring. The choice applies to
+the dock, search, inspector, connections, notifications and diagnostics viewer, and is remembered.
+
+### 3.9 Node labels
 Constant-size white semibold pill labels (12 px) on a dark backing above each visible node, lightly faded by depth (min 65 %); the hovered/selected label is
 brightened and non-neighbour labels fade when a node is selected. Toggle with the dock switch or `L`.
 

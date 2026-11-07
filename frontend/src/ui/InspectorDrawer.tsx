@@ -1,15 +1,20 @@
-import { Activity, ArrowLeft, ArrowRight, Cpu, Gauge, LoaderCircle, MemoryStick, RefreshCw, Sparkles, Timer, TriangleAlert, X } from 'lucide-react'
+import { Activity, ArrowLeft, ArrowRight, BookOpen, Code2, Cpu, ExternalLink, Gauge, LoaderCircle, MemoryStick, RefreshCw, ScrollText, Sparkles, Timer, TriangleAlert, Waypoints, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import type { GraphNode, Insight } from '@shared/graph.ts'
 import { fmtMs, fmtNum, fmtPct, metricStatus } from '../lib/format.ts'
 import type { MetricKey } from '../lib/format.ts'
+import { externalLink } from '../lib/links.ts'
+import type { LinkKind } from '../lib/links.ts'
 import { requestInsight } from '../lib/live.ts'
+import { generateLogs } from '../lib/logs.ts'
 import { STATUS_COLORS, STATUS_LABELS, THEMES, TYPE_COLORS, TYPE_LABELS } from '../lib/themes.ts'
 import { useStore } from '../store.ts'
-import { TYPE_ICONS } from './icons.ts'
+import { useTypeIcons } from './icons.ts'
+import { RiskGauge } from './RiskMeter.tsx'
 import { Sparkline } from './Sparkline.tsx'
+import { useNodeRisk } from './useNodeRisk.ts'
 import { useTypewriter } from './useTypewriter.ts'
 
 const METRICS: { key: MetricKey; label: string; icon: LucideIcon; fmt: (v: number) => string; wide?: boolean }[] = [
@@ -71,6 +76,7 @@ function MetricCard({ node, metric }: { node: GraphNode; metric: (typeof METRICS
 function ConnectionList({ node }: { node: GraphNode }) {
   const graph = useStore((s) => s.graph)
   const select = useStore((s) => s.select)
+  const Icons = useTypeIcons()
   if (!graph) return null
   const byId = new Map(graph.nodes.map((nd) => [nd.id, nd]))
   const inbound = graph.edges.filter((e) => e.target === node.id)
@@ -89,7 +95,7 @@ function ConnectionList({ node }: { node: GraphNode }) {
       </div>
       <ul className="space-y-1">
         {rows.map(({ edge, other, dir }) => {
-          const Icon = TYPE_ICONS[other.type]
+          const Icon = Icons[other.type]
           return (
             <li key={edge.id}>
               <button
@@ -107,6 +113,74 @@ function ConnectionList({ node }: { node: GraphNode }) {
           )
         })}
       </ul>
+    </section>
+  )
+}
+
+function RiskRow({ node }: { node: GraphNode }) {
+  const risk = useNodeRisk(node)
+  if (!risk) return null
+  return (
+    <div className="relative mt-3">
+      <RiskGauge risk={risk} />
+    </div>
+  )
+}
+
+const LINKS: { kind: LinkKind; label: string; icon: LucideIcon }[] = [
+  { kind: 'logs', label: 'Logs', icon: ScrollText },
+  { kind: 'traces', label: 'Traces', icon: Waypoints },
+  { kind: 'source', label: 'Source code', icon: Code2 },
+  { kind: 'runbook', label: 'Runbook', icon: BookOpen },
+]
+
+function SourceLinks({ node }: { node: GraphNode }) {
+  const openLogs = useStore((s) => s.openLogs)
+  const history = useStore((s) => s.history[node.id])
+  const graph = useStore((s) => s.graph)
+  const lastTickAt = useStore((s) => s.lastTickAt)
+  const errors = useMemo(
+    () => generateLogs(node, history ?? [], graph, lastTickAt).filter((l) => l.level === 'ERROR').length,
+    [node, history, graph, lastTickAt],
+  )
+  const cls =
+    'flex items-center gap-2 rounded-xl border border-white/10 bg-white/[.03] px-3 py-2 text-left text-sm text-slate-200 transition-colors hover:border-white/20 hover:bg-white/[.07]'
+
+  return (
+    <section className="border-t border-white/5 px-5 py-4">
+      <h3 className="micro-label mb-3">Source &amp; logs</h3>
+      <div className="grid grid-cols-2 gap-2">
+        {LINKS.map(({ kind, label, icon: Icon }) => {
+          const href = externalLink(kind, node)
+          const body = (
+            <>
+              <Icon size={14} className="text-slate-400" />
+              <span className="flex-1 truncate">{label}</span>
+              {kind === 'logs' && errors > 0 && (
+                <span className="rounded-full bg-rose/15 px-1.5 text-[10px] font-semibold text-rose">{errors} errors</span>
+              )}
+              {href && <ExternalLink size={12} className="text-slate-500" />}
+            </>
+          )
+          if (href)
+            return (
+              <a key={kind} href={href} target="_blank" rel="noreferrer" className={cls}>
+                {body}
+              </a>
+            )
+          if (kind === 'source')
+            return (
+              <button key={kind} disabled title="Set VITE_SOURCE_URL to link this service's repository" className={`${cls} cursor-not-allowed opacity-50`}>
+                {body}
+              </button>
+            )
+          return (
+            <button key={kind} onClick={() => openLogs(node.id, kind)} className={cls}>
+              {body}
+            </button>
+          )
+        })}
+      </div>
     </section>
   )
 }
@@ -219,6 +293,7 @@ export function InspectorDrawer() {
   const node = current ?? last
   const open = !!current
   const scroller = useRef<HTMLDivElement>(null)
+  const Icons = useTypeIcons()
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: 0 })
@@ -241,7 +316,7 @@ export function InspectorDrawer() {
             <div className="relative flex items-start gap-3">
               <div className="rounded-xl border border-white/10 bg-white/5 p-2.5" style={{ color: STATUS_COLORS[node.status] }}>
                 {(() => {
-                  const Icon = TYPE_ICONS[node.type]
+                  const Icon = Icons[node.type]
                   return <Icon size={20} />
                 })()}
               </div>
@@ -269,9 +344,11 @@ export function InspectorDrawer() {
                 </span>
               ))}
             </div>
+            <RiskRow node={node} />
             <p className="relative mt-3 text-[13px] leading-relaxed text-slate-300">{node.description}</p>
           </div>
           <div ref={scroller} className="scrollbar-thin flex-1 overflow-y-auto">
+            <SourceLinks node={node} />
             <section className="border-t border-white/5 px-5 py-4">
               <h3 className="micro-label mb-3">Live metrics</h3>
               <div className="grid grid-cols-2 gap-2">

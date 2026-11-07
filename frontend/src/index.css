@@ -126,10 +126,48 @@ body,
   animation: metric-flash 1.1s ease-in-out 4;
 }
 
+.threat-vignette {
+  box-shadow: inset 0 0 calc(40px + 90px * var(--threat)) calc(2px + 12px * var(--threat)) rgb(255 77 109 / 0.38);
+  animation: threat-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes threat-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes bell-ring {
+  0%,
+  50%,
+  100% {
+    transform: rotate(0);
+  }
+  10%,
+  30% {
+    transform: rotate(14deg);
+  }
+  20%,
+  40% {
+    transform: rotate(-14deg);
+  }
+}
+
+.bell-ring {
+  transform-origin: 50% 10%;
+  animation: bell-ring 1.6s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .logo-glyph,
   .shimmer,
-  .metric-flash {
+  .metric-flash,
+  .threat-vignette,
+  .bell-ring {
     animation: none;
   }
 }

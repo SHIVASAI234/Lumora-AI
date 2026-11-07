@@ -32,3 +32,7 @@ telemetry engine in the browser, so it always demos. With the API running it sho
 
 Drag to orbit, scroll to zoom, click a node to fly to it and open the inspector.
 Shortcuts: `/` search · `Esc` close · `R` re-sync · `P` physics · `L` labels.
+
+Alerts collect under the bell in the top bar. The inspector shows a risk meter and **Source & logs** buttons
+(simulated logs, traces and runbook in-app). To point them at real tools, copy
+[`frontend/.env.example`](frontend/.env.example) to `frontend/.env.local` and set the URL templates.

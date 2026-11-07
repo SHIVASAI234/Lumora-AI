@@ -3,12 +3,14 @@ import { resync, startLive } from './lib/live.ts'
 import { Scene } from './scene/Scene.tsx'
 import { useStore } from './store.ts'
 import { ControlDock } from './ui/ControlDock.tsx'
-import { EventFeed } from './ui/EventFeed.tsx'
 import { HoverTooltip } from './ui/HoverTooltip.tsx'
 import { InspectorDrawer } from './ui/InspectorDrawer.tsx'
+import { LogViewer } from './ui/LogViewer.tsx'
 import { Legend } from './ui/Legend.tsx'
 import { NodeLabels } from './ui/NodeLabels.tsx'
+import { ThreatOverlay } from './ui/ThreatOverlay.tsx'
 import { TopBar } from './ui/TopBar.tsx'
+import { useAlarm } from './ui/useAlarm.ts'
 
 function useShortcuts() {
   useEffect(() => {
@@ -39,18 +41,20 @@ function useShortcuts() {
 export default function App() {
   useEffect(() => startLive(), [])
   useShortcuts()
+  useAlarm()
 
   return (
     <>
       <Scene />
+      <ThreatOverlay />
       <NodeLabels />
       <div className="pointer-events-none fixed inset-0 z-10">
         <TopBar />
         <ControlDock />
         <InspectorDrawer />
         <Legend />
-        <EventFeed />
         <HoverTooltip />
+        <LogViewer />
       </div>
     </>
   )

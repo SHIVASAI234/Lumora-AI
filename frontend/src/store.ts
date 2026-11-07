@@ -1,19 +1,22 @@
 import { create } from 'zustand'
 import { applyTick, NODE_TYPES, STATUSES } from '@shared/graph.ts'
 import type { GraphSnapshot, Insight, NodeMetrics, NodeType, Status, StatusChange, TelemetryTick } from '@shared/graph.ts'
+import { loadPref, savePref } from './lib/prefs.ts'
 import type { ThemeId } from './lib/themes.ts'
 
 const HISTORY_LENGTH = 40
-const MAX_EVENTS = 5
+const MAX_EVENTS = 50
 
 export type Connection = 'connecting' | 'live' | 'simulated'
+export type IconSet = 'standard' | 'hero'
+export type LogTab = 'logs' | 'traces' | 'runbook'
 
 export interface FeedEvent extends StatusChange {
   key: string
   at: number
 }
 
-const prefersReducedMotion =
+export const prefersReducedMotion =
   typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
 interface LumoraState {
@@ -23,6 +26,9 @@ interface LumoraState {
   lastSyncAt: number | null
   syncing: boolean
   events: FeedEvent[]
+  lastSeenAt: number
+  lastTickAt: number
+  logs: { id: string; tab: LogTab } | null
 
   selectedId: string | null
   hoveredId: string | null
@@ -38,6 +44,9 @@ interface LumoraState {
   showFlow: boolean
   theme: ThemeId
   dockCollapsed: boolean
+  threatFx: boolean
+  alarmEnabled: boolean
+  iconSet: IconSet
 
   insights: Record<string, Insight>
   insightLoading: Record<string, boolean>
@@ -62,6 +71,12 @@ interface LumoraState {
   setShowFlow: (v: boolean) => void
   setTheme: (t: ThemeId) => void
   setDockCollapsed: (v: boolean) => void
+  markAllRead: () => void
+  openLogs: (id: string, tab?: LogTab) => void
+  closeLogs: () => void
+  setThreatFx: (v: boolean) => void
+  setAlarmEnabled: (v: boolean) => void
+  setIconSet: (v: IconSet) => void
   setInsightLoading: (id: string, v: boolean) => void
   setInsight: (insight: Insight) => void
   setInsightError: (id: string, err: string | null) => void
@@ -86,6 +101,9 @@ export const useStore = create<LumoraState>()((set, get) => ({
   lastSyncAt: null,
   syncing: false,
   events: [],
+  lastSeenAt: 0,
+  lastTickAt: Date.now(),
+  logs: null,
 
   selectedId: null,
   hoveredId: null,
@@ -101,6 +119,9 @@ export const useStore = create<LumoraState>()((set, get) => ({
   showFlow: true,
   theme: 'nebula',
   dockCollapsed: typeof window !== 'undefined' && window.innerWidth < 1024,
+  threatFx: loadPref('threatFx', true),
+  alarmEnabled: loadPref('alarmEnabled', false),
+  iconSet: loadPref<IconSet>('iconSet', 'standard'),
 
   insights: {},
   insightLoading: {},
@@ -112,6 +133,7 @@ export const useStore = create<LumoraState>()((set, get) => ({
       graph,
       history: appendHistory({}, graph),
       lastSyncAt: Date.now(),
+      lastTickAt: Date.now(),
       selectedId: selectedId && graph.nodes.some((nd) => nd.id === selectedId) ? selectedId : null,
       insights: {},
       insightError: {},
@@ -121,7 +143,7 @@ export const useStore = create<LumoraState>()((set, get) => ({
     const { graph, history } = get()
     if (!graph) return
     const next = applyTick(graph, tick)
-    set({ graph: next, history: appendHistory(history, next) })
+    set({ graph: next, history: appendHistory(history, next), lastTickAt: Date.now() })
   },
   pushEvents: (changes) => {
     if (!changes.length) return
@@ -155,6 +177,21 @@ export const useStore = create<LumoraState>()((set, get) => ({
   setShowFlow: (showFlow) => set({ showFlow }),
   setTheme: (theme) => set({ theme }),
   setDockCollapsed: (dockCollapsed) => set({ dockCollapsed }),
+  markAllRead: () => set({ lastSeenAt: Date.now() }),
+  openLogs: (id, tab = 'logs') => set({ logs: { id, tab } }),
+  closeLogs: () => set({ logs: null }),
+  setThreatFx: (threatFx) => {
+    savePref('threatFx', threatFx)
+    set({ threatFx })
+  },
+  setAlarmEnabled: (alarmEnabled) => {
+    savePref('alarmEnabled', alarmEnabled)
+    set({ alarmEnabled })
+  },
+  setIconSet: (iconSet) => {
+    savePref('iconSet', iconSet)
+    set({ iconSet })
+  },
   setInsightLoading: (id, v) => set({ insightLoading: { ...get().insightLoading, [id]: v } }),
   setInsight: (insight) => set({ insights: { ...get().insights, [insight.nodeId]: insight } }),
   setInsightError: (id, err) => set({ insightError: { ...get().insightError, [id]: err } }),

@@ -1,4 +1,4 @@
-import { Eye, Magnet, Orbit, Palette, PanelLeftClose, PanelLeftOpen, RefreshCw, Rotate3d, Shuffle, Sparkles, Tag } from 'lucide-react'
+import { Eye, Magnet, Orbit, Palette, PanelLeftClose, PanelLeftOpen, RefreshCw, Rotate3d, Shapes, Shuffle, Siren, Sparkles, Tag } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { NODE_TYPES, STATUSES } from '@shared/graph.ts'
 import { timeAgo } from '../lib/format.ts'
@@ -6,7 +6,8 @@ import { resync } from '../lib/live.ts'
 import { STATUS_COLORS, STATUS_LABELS, THEMES, TYPE_COLORS, TYPE_LABELS } from '../lib/themes.ts'
 import type { ThemeId } from '../lib/themes.ts'
 import { useStore } from '../store.ts'
-import { TYPE_ICONS } from './icons.ts'
+import type { IconSet } from '../store.ts'
+import { HERO_ICONS, TYPE_ICONS, useTypeIcons } from './icons.ts'
 import { useNow } from './useNow.ts'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -58,6 +59,7 @@ function Switch({ checked, onChange, label, icon }: { checked: boolean; onChange
 export function ControlDock() {
   const s = useStore()
   const theme = THEMES[s.theme]
+  const Icons = useTypeIcons()
   useNow(5000)
 
   const counts = { active: 0, warning: 0, critical: 0 }
@@ -101,7 +103,7 @@ export function ControlDock() {
       <Section title="Node types">
         <div className="flex flex-wrap gap-1.5">
           {NODE_TYPES.map((t) => {
-            const Icon = TYPE_ICONS[t]
+            const Icon = Icons[t]
             return (
               <Chip key={t} active={s.typeFilter[t]} onClick={() => s.toggleType(t)} label={`Toggle ${TYPE_LABELS[t]} nodes`}>
                 <Icon size={14} style={{ color: s.typeFilter[t] ? TYPE_COLORS[t] : undefined }} />
@@ -157,6 +159,27 @@ export function ControlDock() {
         <Switch checked={s.showLabels} onChange={s.setShowLabels} label="Labels" icon={<Tag size={15} />} />
         <Switch checked={s.autoRotate} onChange={s.setAutoRotate} label="Auto-rotate" icon={<Rotate3d size={15} />} />
         <Switch checked={s.showFlow} onChange={s.setShowFlow} label="Flow particles" icon={<Sparkles size={15} />} />
+        <Switch checked={s.threatFx} onChange={s.setThreatFx} label="Threat FX" icon={<Siren size={15} />} />
+        <div className="mt-3 flex items-center gap-2 text-sm text-slate-200">
+          <Shapes size={15} className="text-slate-400" /> Icons
+        </div>
+        <div className="mt-2 grid grid-cols-2 gap-1 rounded-xl bg-white/5 p-1" role="radiogroup" aria-label="Icon style">
+          {(['standard', 'hero'] as IconSet[]).map((id) => {
+            const Preview = (id === 'hero' ? HERO_ICONS : TYPE_ICONS).gateway
+            return (
+              <button
+                key={id}
+                role="radio"
+                aria-checked={s.iconSet === id}
+                onClick={() => s.setIconSet(id)}
+                className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs transition-all ${s.iconSet === id ? 'bg-white/15 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+              >
+                <Preview size={13} style={{ color: TYPE_COLORS.gateway }} />
+                {id === 'hero' ? 'Hero' : 'Standard'}
+              </button>
+            )
+          })}
+        </div>
         <div className="mt-3 flex items-center gap-2 text-sm text-slate-200">
           <Palette size={15} className="text-slate-400" /> Theme
         </div>

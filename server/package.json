@@ -1,0 +1,24 @@
+{
+  "name": "lumora-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Lumora AI mock graph + telemetry API (Express + ws)",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "start": "node index.ts",
+    "dev": "node --watch index.ts"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.3.0",
+    "ws": "^8.22.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/ws": "^8.18.2"
+  }
+}

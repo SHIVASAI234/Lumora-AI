@@ -5,13 +5,14 @@ import { AdditiveBlending, Color, DoubleSide } from 'three'
 import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three'
 import type { GraphNode, NodeType } from '@shared/graph.ts'
 import { NODE_SIZE, STATUS_COLORS } from '../lib/themes.ts'
-import { useStore } from '../store.ts'
+import { prefersReducedMotion, useStore } from '../store.ts'
 import { bodies } from './layout.ts'
 
 const hashPhase = (id: string) => ([...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % 628) / 100
 
 const PULSE_SPEED = { active: 1.4, warning: 2.6, critical: 4.2 }
 const GLOW = { active: 1.8, warning: 2.4, critical: 3.2 }
+const SHOCK_RINGS = 2
 
 function CoreGeometry({ type, size }: { type: NodeType; size: number }) {
   switch (type) {
@@ -45,6 +46,8 @@ export const NodeMesh = memo(function NodeMesh({ node, visible, dimmed }: Props)
   const selected = useStore((s) => s.selectedId === node.id)
   const hover = useStore((s) => s.hover)
   const select = useStore((s) => s.select)
+  const threatFx = useStore((s) => s.threatFx)
+  const shocks = useRef<(Mesh | null)[]>([])
 
   const size = NODE_SIZE[node.type]
   const phase = useMemo(() => hashPhase(node.id), [node.id])
@@ -81,6 +84,17 @@ export const NodeMesh = memo(function NodeMesh({ node, visible, dimmed }: Props)
     r.visible = active
     r.quaternion.copy(state.camera.quaternion)
     r.rotateZ(t * (selected ? 1.6 : 0.6))
+
+    const shock = threatFx && node.status === 'critical' && !dimmed
+    shocks.current.forEach((m, i) => {
+      if (!m) return
+      m.visible = shock
+      if (!shock) return
+      const ph = prefersReducedMotion ? 0.3 + i * 0.3 : (t * 0.55 + i / SHOCK_RINGS + phase) % 1
+      m.scale.setScalar(size * (1.6 + ph * 4.5))
+      ;(m.material as MeshBasicMaterial).opacity = (1 - ph) ** 2 * 0.75
+      m.quaternion.copy(state.camera.quaternion)
+    })
   })
 
   const onOver = (e: ThreeEvent<PointerEvent>) => {
@@ -120,6 +134,19 @@ export const NodeMesh = memo(function NodeMesh({ node, visible, dimmed }: Props)
         <ringGeometry args={[size * 2.1, size * 2.3, 64, 1, 0, Math.PI * 1.6]} />
         <meshBasicMaterial color="#ffffff" transparent opacity={0.85} side={DoubleSide} toneMapped={false} depthWrite={false} />
       </mesh>
+      {Array.from({ length: SHOCK_RINGS }, (_, i) => (
+        <mesh
+          key={i}
+          ref={(m) => {
+            shocks.current[i] = m
+          }}
+          raycast={() => null}
+          visible={false}
+        >
+          <ringGeometry args={[0.92, 1, 64]} />
+          <meshBasicMaterial color={STATUS_COLORS.critical} transparent opacity={0} side={DoubleSide} blending={AdditiveBlending} depthWrite={false} toneMapped={false} />
+        </mesh>
+      ))}
     </group>
   )
 })

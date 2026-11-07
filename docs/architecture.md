@@ -98,7 +98,9 @@ flowchart TD
     App --> InspectorDrawer
     App --> Legend
     App --> HoverTooltip
-    App --> EventFeed
+    App --> ThreatOverlay["ThreatOverlay (critical edge glow)"]
+    App --> LogViewer["LogViewer (logs / traces / runbook modal)"]
+    TopBar --> NotificationBell["NotificationBell → AlertCard × N"]
     App --> NodeLabels["NodeLabels (DOM label layer)"]
 
     Scene["Scene (R3F &lt;Canvas&gt;)"] --> Backdrop["Backdrop (Stars, fog, lights)"]
@@ -114,9 +116,11 @@ flowchart TD
 
     ControlDock --> FilterGroup["Type / status filters"]
     ControlDock --> PhysicsControls["Physics + gravity"]
-    ControlDock --> ViewControls["Labels, auto-rotate, theme"]
+    ControlDock --> ViewControls["Labels, auto-rotate, flow, threat FX, theme, icon style"]
     ControlDock --> ResyncButton
 
+    InspectorDrawer --> RiskGauge["RiskGauge (lib/risk.ts)"]
+    InspectorDrawer --> SourceLinks["SourceLinks (lib/links.ts)"]
     InspectorDrawer --> MetricCard["MetricCard + Sparkline × 5"]
     InspectorDrawer --> ConnectionList
     InspectorDrawer --> InsightPanel["AI Insight panel"]

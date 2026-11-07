@@ -2,7 +2,8 @@ import { Search, WifiOff } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { STATUS_COLORS, TYPE_LABELS } from '../lib/themes.ts'
 import { useStore } from '../store.ts'
-import { TYPE_ICONS } from './icons.ts'
+import { useTypeIcons } from './icons.ts'
+import { NotificationBell } from './Notifications.tsx'
 
 function ConnectionPill() {
   const connection = useStore((s) => s.connection)
@@ -42,6 +43,7 @@ function Stat({ label, value, color, pulse }: { label: string; value: number; co
 function SearchBox() {
   const graph = useStore((s) => s.graph)
   const select = useStore((s) => s.select)
+  const Icons = useTypeIcons()
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
   const [cursor, setCursor] = useState(0)
@@ -100,7 +102,7 @@ function SearchBox() {
       {open && results.length > 0 && (
         <ul className="glass absolute right-0 mt-2 w-72 overflow-hidden rounded-xl py-1" role="listbox">
           {results.map((nd, i) => {
-            const Icon = TYPE_ICONS[nd.type]
+            const Icon = Icons[nd.type]
             return (
               <li key={nd.id}>
                 <button
@@ -150,6 +152,7 @@ export function TopBar() {
           <Stat label="warning" value={counts.warning} color={STATUS_COLORS.warning} />
           <Stat label="critical" value={counts.critical} color={STATUS_COLORS.critical} pulse={counts.critical > 0} />
         </div>
+        <NotificationBell />
         <SearchBox />
       </div>
     </header>

@@ -8,7 +8,7 @@ flow, a glassmorphism control dock, and a node inspector with live metrics and A
 
 | Path | What |
 | --- | --- |
-| [`docs/`](docs) | Design specs — [architecture](docs/architecture.md), [API](docs/api_spec.md), [UI/UX wireframe](docs/ui_ux_wireframe.md) |
+| [`docs/`](docs) | Design specs — [architecture](docs/architecture.md), [API](docs/api_spec.md), [UI/UX wireframe](docs/ui_ux_wireframe.md); demo deck ([PPTX](docs/presentation/Lumora-AI-demo.pptx) · [PDF](docs/presentation/Lumora-AI-demo.pdf)) |
 | [`shared/graph.ts`](shared/graph.ts) | Data model, seeded graph generator, telemetry simulator, heuristic insight engine (used by server and browser) |
 | [`server/`](server) | Mock REST + WebSocket telemetry API (Express + ws) on `:8787` |
 | [`frontend/`](frontend) | Vite + React 19 + Tailwind v4 + React Three Fiber app on `:5173` |
